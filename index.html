@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Dokter-Dokteran — Tebak Diagnosis (Tiered)</title>
-<meta name="description" content="Game edukasi dokter-dokteran: pasien masuk, baca gejala, tebak diagnosis. Ada tier, profil dokter, 5 avatar, musik & SFX.">
+<title>Dokter-Dokteran — Tebak Diagnosis</title>
+<meta name="description" content="Game edukasi dokter-dokteran: pasien masuk, baca gejala, tebak diagnosis. Ada tier, profil dokter, 4 avatar, musik & SFX.">
 <style>
   :root{
     --bg:#0e1016; --panel:#151a22; --panel2:#111620; --line:#252c3a; --text:#e9edf5; --muted:#aeb6c5;
@@ -36,7 +36,6 @@
   button.btn:hover{border-color:#3a455c;box-shadow:0 6px 20px rgba(0,0,0,.25)}
   button.btn:active{transform:translateY(1px)}
   .btn .name{font-size:15px;font-weight:700}
-  .btn .tag{font-size:12px;color:var(--muted)}
   .btn.correct{outline:2px solid #2ecc71}
   .btn.wrong{outline:2px solid #ff5a6e}
   .footerRow{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:8px}
@@ -46,9 +45,8 @@
   .btnBig{background:linear-gradient(180deg,#1f2632,#161c28);border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
   .btnBig:disabled{opacity:.6;cursor:not-allowed}
   .log{white-space:pre-wrap}
-  /* Avatar (5 karakter) */
+  /* Avatar (4 karakter) */
   .avatar{width:36px;height:36px;border-radius:50%;border:2px solid #2b3344;display:grid;place-items:center;overflow:hidden}
-  .naya{width:100%;height:100%}
   .blink{animation:blink 5s infinite}
   @keyframes blink{0%,97%,100%{transform:scaleY(1)}98%{transform:scaleY(0.05)}}
   .bounce{animation:bounce .5s ease-out}
@@ -202,9 +200,7 @@ function startMusic(){
   if (musicTimer) clearInterval(musicTimer);
   const beatMs = 60000/tempo;
   musicTimer = setInterval(()=>{
-    // kick-ish
-    if (musicStep%4===0) tone({f:60,d:0.08,type:'sine',g:0.10});
-    // pluck lead
+    if (musicStep%4===0) tone({f:60,d:0.08,type:'sine',g:0.10}); // kick-ish
     const scales={1:[0,3,5,7,10],2:[0,2,5,7,9],3:[0,2,3,7,9]};
     const tierVal = +$('#tierSel').value;
     const scale = scales[tierVal] || scales[1];
@@ -218,18 +214,24 @@ $('#volMusic').addEventListener('input', e=>setMusicVol(+e.target.value));
 $('#volFx').addEventListener('input', e=>setFxVol(+e.target.value));
 document.body.addEventListener('pointerdown', ()=>{ if(!started){ ensureAudio(); started=true; }}, {once:true});
 
-/* ============ Avatar (5 karakter) ============ */
+/* ============ Avatar (4 karakter, Naya→Mika; Alya dihapus) ============ */
 const AVATARS = [
-  {id:'naya', name:'Naya', desc:'Chibi pink ceria', svg:(w=180,h=180)=>`
-    <svg class="naya" viewBox="0 0 200 200" width="${w}" height="${h}">
-      <circle cx="60" cy="60" r="28" fill="#FF77B7" opacity=".9"/>
-      <circle cx="140" cy="60" r="28" fill="#FF77B7" opacity=".9"/>
-      <circle cx="100" cy="90" r="48" fill="#ffd6e7" stroke="#e9a3c3" stroke-width="3"/>
-      <g><ellipse class="blink" cx="82" cy="88" rx="8" ry="10" fill="#1b1e27"/>
-         <ellipse class="blink" cx="118" cy="88" rx="8" ry="10" fill="#1b1e27"/></g>
-      <path d="M85 110 q15 12 30 0" stroke="#e0628f" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <rect x="70" y="130" width="60" height="50" rx="12" fill="#6EE7C8" stroke="#16A085" stroke-width="3"/>
-      <circle cx="100" cy="150" r="10" fill="#0e1016" stroke="#e9edf5" stroke-width="3"/>
+  {id:'mika', name:'Mika', desc:'Chibi teal + stetoskop (baru)', svg:(w=180,h=180)=>`
+    <svg viewBox="0 0 200 200" width="${w}" height="${h}">
+      <defs>
+        <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6EE7C8"/><stop offset="1" stop-color="#16A085"/>
+        </linearGradient>
+      </defs>
+      <rect x="44" y="52" width="112" height="32" rx="16" fill="url(#hair)"/>
+      <circle cx="100" cy="95" r="46" fill="#ffe4d6" stroke="#e4b9a4" stroke-width="3"/>
+      <g><ellipse class="blink" cx="82" cy="95" rx="7" ry="9" fill="#1b1e27"/>
+         <ellipse class="blink" cx="118" cy="95" rx="7" ry="9" fill="#1b1e27"/></g>
+      <path d="M84 113 q16 12 32 0" stroke="#a45a6a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="70" y="140" width="60" height="42" rx="12" fill="#e9edf5" stroke="#aeb6c5" stroke-width="3"/>
+      <path d="M85 140 q15 18 30 0" stroke="#16A085" stroke-width="4" fill="none"/>
+      <circle cx="88" cy="158" r="8" fill="#0e1016" stroke="#e9edf5" stroke-width="3"/>
+      <circle cx="112" cy="158" r="8" fill="#0e1016" stroke="#e9edf5" stroke-width="3"/>
     </svg>`},
   {id:'raka', name:'Raka', desc:'Scrub biru, rambut rapi', svg:(w=180,h=180)=>`
     <svg viewBox="0 0 200 200" width="${w}" height="${h}">
@@ -240,14 +242,6 @@ const AVATARS = [
          <ellipse class="blink" cx="118" cy="88" rx="8" ry="10" fill="#1b1e27"/></g>
       <path d="M85 112 q15 -10 30 0" stroke="#8b4f3a" stroke-width="4" fill="none" stroke-linecap="round"/>
       <rect x="75" y="147" width="50" height="8" rx="4" fill="#0e1016"/>
-    </svg>`},
-  {id:'alya', name:'Alya', desc:'Jilbab mint, senyum kalem', svg:(w=180,h=180)=>`
-    <svg viewBox="0 0 200 200" width="${w}" height="${h}">
-      <path d="M40,110 a60,60 0 1,1 120,0 v30 h-120z" fill="#6EE7C8" stroke="#16A085" stroke-width="3"/>
-      <circle cx="100" cy="90" r="40" fill="#ffe5d6" stroke="#dbb8a5" stroke-width="3"/>
-      <g><ellipse class="blink" cx="85" cy="92" rx="7" ry="9" fill="#1b1e27"/>
-         <ellipse class="blink" cx="115" cy="92" rx="7" ry="9" fill="#1b1e27"/></g>
-      <path d="M85 110 q15 8 30 0" stroke="#b06a5a" stroke-width="4" fill="none" stroke-linecap="round"/>
     </svg>`},
   {id:'dimas', name:'Dimas', desc:'Steto besar, jaket lab', svg:(w=180,h=180)=>`
     <svg viewBox="0 0 200 200" width="${w}" height="${h}">
@@ -276,7 +270,10 @@ const AVATARS = [
 /* Render avatar choices in modal */
 function renderAvatarChoices(){
   const wrap = $('#avatarChoices'); wrap.innerHTML='';
-  const current = getStore('dok_avatar','naya');
+  // migrate lama (naya/alya -> mika)
+  const prev = getStore('dok_avatar','mika');
+  let current = prev;
+  if (prev==='naya' || prev==='alya') { current='mika'; setStore('dok_avatar','mika'); }
   AVATARS.forEach(a=>{
     const div = document.createElement('div');
     div.className = 'avatarCard'+(current===a.id?' active':'');
@@ -294,7 +291,8 @@ function renderAvatarChoices(){
 
 /* Draw small & big avatar */
 function drawAvatars(){
-  const id = getStore('dok_avatar','naya');
+  let id = getStore('dok_avatar','mika');
+  if (id==='naya' || id==='alya') { id='mika'; setStore('dok_avatar','mika'); }
   const def = AVATARS.find(x=>x.id===id) || AVATARS[0];
   $('#avatarSmall').innerHTML = def.svg(36,36);
   $('#avatarBig').innerHTML = def.svg(180,180);
@@ -323,7 +321,7 @@ function makeCase({name, tag, chief, story, exam, v, why}){ return {name,tag,chi
 const GEN = {
   Asma: ()=>{ const v=vitals({rr:[24,34], spo:[86,92], hr:[100,120]}); return makeCase({
     name:'Asma eksaserbasi', tag:'Pulmo',
-    chief:'Sesak napas dan mengi',
+    chief:'Sesak napas dan mengigil',
     story:`${pick(['Sejak beberapa jam','Sejak tadi malam'])} terasa sesak. Riwayat asma, pemicu ${pick(['debu','dingin','asap rokok'])}.`,
     exam:`Wheezing difus, pakai otot bantu, tidak ada stridor. Bicara ${pick(['terputus-putus','pendek'])}.`, v,
     why:'Mengi difus + riwayat asma + pemicu khas → paling sesuai asma.'
@@ -557,10 +555,10 @@ function newCase(){
   $('#story').textContent = currentCase.story;
   $('#exam').textContent = currentCase.exam;
   updateVitalsBars(currentCase.v);
+  // HAPUS label "(paling mungkin)" biar ga ketebak
   $('#options').innerHTML = opts.map(o=>`
     <button class="btn" data-name="${o}">
       <span class="name">${o}</span>
-      <span class="tag">${o===currentCase.name?'(paling mungkin)':''}</span>
     </button>
   `).join('');
   tries = (tier===3)?1:2; // ahli lebih ketat
@@ -579,7 +577,6 @@ function bindOptionHandlers(correctName){
       if (chosen === correctName){
         rightFx();
         btn.classList.add('correct');
-        // skor: T1 +100, T2 +120, T3 +150
         const add = (tier===1?100:(tier===2?120:150));
         score += add; $('#score').textContent=score;
         const n=$('#avatarBig'); n.classList.remove('shake'); n.classList.add('bounce'); setTimeout(()=>n.classList.remove('bounce'), 400);
@@ -632,7 +629,7 @@ $('#saveProfile').addEventListener('click', ()=>{
 /* avatar init */
 function initProfile(){
   const name = getStore('dok_name',''); $('#docNameLabel').textContent = 'Dr. ' + (name||'—');
-  if (!getStore('dok_avatar', null)) setStore('dok_avatar','naya');
+  if (!getStore('dok_avatar', null)) setStore('dok_avatar','mika');
   drawAvatars();
 }
 
