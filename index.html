@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Dokter-Dokteran — Tebak Diagnosis</title>
-<meta name="description" content="Game edukasi dokter-dokteran: pasien masuk, baca gejala, tebak diagnosis. Ada tier, profil dokter, 4 avatar, musik & SFX.">
+<meta name="description" content="Game edukasi dokter-dokteran: pasien masuk, baca gejala, tebak diagnosis. Deck unik per tier, profil dokter, 4 avatar, musik & SFX.">
 <style>
   :root{
     --bg:#0e1016; --panel:#151a22; --panel2:#111620; --line:#252c3a; --text:#e9edf5; --muted:#aeb6c5;
@@ -214,14 +214,12 @@ $('#volMusic').addEventListener('input', e=>setMusicVol(+e.target.value));
 $('#volFx').addEventListener('input', e=>setFxVol(+e.target.value));
 document.body.addEventListener('pointerdown', ()=>{ if(!started){ ensureAudio(); started=true; }}, {once:true});
 
-/* ============ Avatar (4 karakter, Naya→Mika; Alya dihapus) ============ */
+/* ============ Avatar (4 karakter, Naya->Mika, Alya removed) ============ */
 const AVATARS = [
   {id:'mika', name:'Mika', desc:'Chibi teal + stetoskop (baru)', svg:(w=180,h=180)=>`
     <svg viewBox="0 0 200 200" width="${w}" height="${h}">
-      <defs>
-        <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#6EE7C8"/><stop offset="1" stop-color="#16A085"/>
-        </linearGradient>
+      <defs><linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6EE7C8"/><stop offset="1" stop-color="#16A085"/></linearGradient>
       </defs>
       <rect x="44" y="52" width="112" height="32" rx="16" fill="url(#hair)"/>
       <circle cx="100" cy="95" r="46" fill="#ffe4d6" stroke="#e4b9a4" stroke-width="3"/>
@@ -270,10 +268,9 @@ const AVATARS = [
 /* Render avatar choices in modal */
 function renderAvatarChoices(){
   const wrap = $('#avatarChoices'); wrap.innerHTML='';
-  // migrate lama (naya/alya -> mika)
   const prev = getStore('dok_avatar','mika');
-  let current = prev;
-  if (prev==='naya' || prev==='alya') { current='mika'; setStore('dok_avatar','mika'); }
+  let current = (prev==='naya'||prev==='alya') ? 'mika' : prev;
+  if (current!=='mika' && (prev==='naya'||prev==='alya')) setStore('dok_avatar','mika');
   AVATARS.forEach(a=>{
     const div = document.createElement('div');
     div.className = 'avatarCard'+(current===a.id?' active':'');
@@ -288,8 +285,6 @@ function renderAvatarChoices(){
     wrap.appendChild(div);
   });
 }
-
-/* Draw small & big avatar */
 function drawAvatars(){
   let id = getStore('dok_avatar','mika');
   if (id==='naya' || id==='alya') { id='mika'; setStore('dok_avatar','mika'); }
@@ -311,17 +306,19 @@ function uniquePatient(){
   return uniquePatient();
 }
 
-/* ============ Disease Bank (by tier) ============ */
+/* ============ Vital helper ============ */
 function vitals({hr=[70,100], rr=[12,20], spo=[96,100], sbp=[110,130], dbp=[70,85]}={}){
   const HR=rnd(hr[0],hr[1]), RR=rnd(rr[0],rr[1]), SpO=rnd(spo[0],spo[1]), BP=[rnd(sbp[0],sbp[1]),rnd(dbp[0],dbp[1])];
   return {HR,RR,SpO,BP};
 }
 function makeCase({name, tag, chief, story, exam, v, why}){ return {name,tag,chief,story,exam,v,why}; }
 
+/* ============ Disease Generators ============ */
+/* Existing */
 const GEN = {
   Asma: ()=>{ const v=vitals({rr:[24,34], spo:[86,92], hr:[100,120]}); return makeCase({
     name:'Asma eksaserbasi', tag:'Pulmo',
-    chief:'Sesak napas dan mengigil',
+    chief:'Sesak napas dan mengi',
     story:`${pick(['Sejak beberapa jam','Sejak tadi malam'])} terasa sesak. Riwayat asma, pemicu ${pick(['debu','dingin','asap rokok'])}.`,
     exam:`Wheezing difus, pakai otot bantu, tidak ada stridor. Bicara ${pick(['terputus-putus','pendek'])}.`, v,
     why:'Mengi difus + riwayat asma + pemicu khas → paling sesuai asma.'
@@ -348,9 +345,9 @@ const GEN = {
     why:'Ortopnea/PND + edema perifer → gagal jantung.'
   });},
   DKA: ()=>{ const v=vitals({rr:[24,32], spo:[94,98], hr:[95,120], sbp:[95,120], dbp:[55,75]}); return makeCase({
-    name:'DKA (Ketoasidosis Diabetik)', tag:'Metabolik',
+    name:'Ketoasidosis Diabetik (DKA)', tag:'Metabolik',
     chief:'Mual muntah, napas cepat',
-    story:`DM tipe 1, poliuria/polidipsia, nafas Kussmaul, bau buah.`,
+    story:`DM tipe 1, poliuria/polidipsia, napas Kussmaul, bau buah.`,
     exam:`Dehidrasi, kesadaran menurun.`, v,
     why:'DM + Kussmaul + aseton → DKA.'
   });},
@@ -480,12 +477,161 @@ const GEN = {
     story:`Setelah makan di luar; feses tanpa darah.`, exam:`Turgor menurun, mulut kering.`, v,
     why:'Diare muntah akut + dehidrasi → gastroenteritis.'
   });},
+
+  /* Tambahan untuk variasi & kebutuhan deck */
+  URI: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'ISPA viral (common cold)', tag:'Infeksi',
+    chief:'Pilek, hidung tersumbat, batuk kering',
+    story:`Demam ringan ${pick(['37.8°C','38.1°C'])}, kontak dengan teman sakit.`,
+    exam:`Mukosa nasal hiperemis, faring eritem, paru bersih.`, v,
+    why:'Gejala saluran atas dominan + demam ringan → ISPA viral.'
+  });},
+  Sinusitis: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'Sinusitis akut', tag:'THT',
+    chief:'Nyeri wajah, hidung tersumbat, post-nasal drip',
+    story:`Keluhan >10 hari, bau mulut, lendir purulen.`,
+    exam:`Nyeri tekan sinus maksilaris.`, v,
+    why:'Gejala >10 hari + sekret purulen + nyeri sinus → sinusitis.'
+  });},
+  Otitis: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'Otitis media akut', tag:'THT',
+    chief:'Nyeri telinga, demam',
+    story:`Pendengaran menurun sementara.`,
+    exam:`Membran timpani eritem, menonjol.`, v,
+    why:'Otalgia + MT menonjol → OMA.'
+  });},
+  Strep: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'Faringitis streptokokus', tag:'THT',
+    chief:'Sakit tenggorok hebat, demam',
+    story:`Tidak ada batuk, nyeri menelan.`,
+    exam:`Tonsil eksudatif, kelenjar servikal nyeri.`, v,
+    why:'Centor tinggi (tanpa batuk, eksudat, nyeri kgb) → Strep.'
+  });},
+  Rhinitis: ()=>{ const v=vitals({hr:[70,95]}); return makeCase({
+    name:'Rinitis alergi', tag:'Alergi',
+    chief:'Bersin-bersin, gatal hidung, mata berair',
+    story:`Musiman/paparan debu.`,
+    exam:`Konka pucat, edema.`, v,
+    why:'Triad alergi + konka pucat → rinitis alergi.'
+  });},
+  Gastritis: ()=>{ const v=vitals({hr:[75,100]}); return makeCase({
+    name:'Gastritis', tag:'GI',
+    chief:'Nyeri ulu hati, mual',
+    story:`Setelah kopi/NSAID.`,
+    exam:`Nyeri tekan epigastrium ringan.`, v,
+    why:'Nyeri epigastrium pasca iritan → gastritis.'
+  });},
+  GERD: ()=>{ const v=vitals({hr:[70,95]}); return makeCase({
+    name:'GERD', tag:'GI',
+    chief:'Rasa panas di dada (heartburn)',
+    story:`Memburuk setelah makan/pas berbaring; regurgitasi asam.`,
+    exam:`Normal.`, v,
+    why:'Heartburn posisi + regurgitasi → GERD.'
+  });},
+  Cystitis: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'Sistitis akut', tag:'GU',
+    chief:'Nyeri saat BAK (disuria), sering BAK',
+    story:`Tanpa demam tinggi, tidak ada nyeri pinggang.`,
+    exam:`Suprapubik nyeri tekan.`, v,
+    why:'ISK bawah: disuria + frekuensi tanpa demam/nyeri CVA → sistitis.'
+  });},
+  Migraine: ()=>{ const v=vitals({hr:[70,95]}); return makeCase({
+    name:'Migrain', tag:'Neurologi',
+    chief:'Sakit kepala berdenyut, unilateral',
+    story:`Fotofobia/fonofobia, mual; dipicu kurang tidur.`,
+    exam:`Neurologis normal.`, v,
+    why:'Pola migren tipikal + neuro normal.'
+  });},
+  TTH: ()=>{ const v=vitals({hr:[70,95]}); return makeCase({
+    name:'Sakit kepala tipe tegang (TTH)', tag:'Neurologi',
+    chief:'Sakit kepala tumpul, bilateral',
+    story:`Rasa “ikat” kepala, stres/kurang tidur.`,
+    exam:`Neurologis normal.`, v,
+    why:'Tekan/ketat bilateral + stres → TTH.'
+  });},
+  BPPV: ()=>{ const v=vitals({hr:[70,95]}); return makeCase({
+    name:'Vertigo posisi paroksismal jinak (BPPV)', tag:'Neurologi',
+    chief:'Pusing berputar saat ubah posisi',
+    story:`Episodik detik-menit; mual.`,
+    exam:`Dix-Hallpike (+), tanpa defisit neurologis.`, v,
+    why:'Vertigo singkat dipicu posisi + Dix-Hallpike (+) → BPPV.'
+  });},
+  Influenza: ()=>{ const v=vitals({hr:[90,110], rr:[14,22]}); return makeCase({
+    name:'Influenza-like illness', tag:'Infeksi',
+    chief:'Demam, nyeri badan, batuk',
+    story:`Onset mendadak; sakit kepala, lemah.`,
+    exam:`Faring hiperemis, paru bersih.`, v,
+    why:'Gejala sistemik kuat + respiratori atas → ILI.'
+  });},
+  Bronchitis: ()=>{ const v=vitals({rr:[16,24], hr:[80,105]}); return makeCase({
+    name:'Bronkitis akut', tag:'Pulmo',
+    chief:'Batuk berdahak setelah ISPA',
+    story:`Tanpa sesak berat; demam ringan.`,
+    exam:`Ronki kasar, wheeze ringan.`, v,
+    why:'Batuk pasca-ISPA, tanpa pneumonia → bronkitis.'
+  });},
+
+  /* Tambahan advanced untuk Tier 2/3 */
+  Pericarditis: ()=>{ const v=vitals({hr:[90,110]}); return makeCase({
+    name:'Perikarditis akut', tag:'Kardiovaskular',
+    chief:'Nyeri dada tajam, membaik duduk condong',
+    story:`Nyeri memburuk saat inspirasi/berbaring; pasca infeksi virus.`,
+    exam:`Friction rub; EKG (teoretis) ST elev difus.`, v,
+    why:'Nyeri pleuritik + posisi + rub → perikarditis.'
+  });},
+  DVT: ()=>{ const v=vitals({hr:[80,100]}); return makeCase({
+    name:'DVT (trombosis vena dalam)', tag:'Vaskular',
+    chief:'Kaki bengkak & nyeri sepihak',
+    story:`Imobilisasi/penerbangan lama.`,
+    exam:`Tungkai hangat, bengkak, nyeri betis.`, v,
+    why:'Bengkak sepihak + risiko trombo → DVT.'
+  });},
+  TIA: ()=>{ const v=vitals({}); return makeCase({
+    name:'TIA', tag:'Neurologi',
+    chief:'Lemah/baal sementara, pulih <24 jam',
+    story:`Faktor risiko: ${pick(['hipertensi','AF','DM'])}.`,
+    exam:`Normal saat datang.`, v,
+    why:'Defisit fokal sementara → TIA.'
+  });},
+  SAH: ()=>{ const v=vitals({hr:[80,110]}); return makeCase({
+    name:'Perdarahan subaraknoid (SAH)', tag:'Neurologi',
+    chief:'Sakit kepala “petir” tiba-tiba',
+    story:`Nyeri hebat seketika, mual muntah.`,
+    exam:`Kaku kuduk bisa ada; defisit bervariasi.`, v,
+    why:'Thunderclap headache → curiga SAH.'
+  });},
+  HepatitisAcute: ()=>{ const v=vitals({}); return makeCase({
+    name:'Hepatitis akut', tag:'GI',
+    chief:'Lemas, mual, urin gelap',
+    story:`Sklera ikterik, riwayat obat/herbal/virus.`,
+    exam:`Hepatomegali ringan.`, v,
+    why:'Ikterus + gejala prodromal → hepatitis akut.'
+  });},
+  Cholangitis: ()=>{ const v=vitals({hr:[100,120], rr:[16,24], sbp:[95,120], dbp:[55,80]}); return makeCase({
+    name:'Kolangitis akut', tag:'GI',
+    chief:'Demam, nyeri RUQ, ikterus',
+    story:`Riwayat batu empedu.`,
+    exam:`RUQ nyeri; (Trias Charcot).`, v,
+    why:'Trias demam-nyeri RUQ-ikterus → kolangitis.'
+  });},
 };
 
+/* ============ Tier Definitions (Deck tanpa duplikat) ============ */
 const TIER_DEF = {
-  1: {name:'Dokter Belajar', max:20, pool:['Asma','Hypo','GE','Stone','Pyelo','Typhoid','Pn']},
-  2: {name:'Dokter Magang',  max:20, pool:['Asma','Pn','HF','Appy','Chole','Pancrea','DKA','TB','Dengue','UGIB']},
-  3: {name:'Dokter Ahli',    max:30, pool:['Sepsis','Ana','PTX','PE','ACS','Stroke','PreE','Ectopic','Malaria','UGIB','HF','Pn']},
+  1: {name:'Dokter Belajar', max:20, pool:[
+    'Asma','Hypo','GE','Stone','Pyelo','Typhoid','Pn',
+    'URI','Sinusitis','Otitis','Strep','Rhinitis','Gastritis','GERD',
+    'Cystitis','Migraine','TTH','BPPV','Influenza','Bronchitis'
+  ]},
+  2: {name:'Dokter Magang',  max:20, pool:[
+    'Asma','Pn','HF','Appy','Chole','Pancrea','DKA','TB','Dengue','UGIB',
+    'Stone','Pyelo','Gastritis','GERD','Bronchitis','Pericarditis','HepatitisAcute','DVT','URI','Sinusitis'
+  ]},
+  3: {name:'Dokter Ahli',    max:30, pool:[
+    'Sepsis','Ana','PTX','PE','ACS','Stroke','PreE','Ectopic','Malaria','UGIB',
+    'HF','Pn','Pericarditis','TIA','SAH','DVT','Cholangitis','Pancrea','Chole','Appy',
+    'TB','Dengue','Asma','Pyelo','Stone','GE','HepatitisAcute','Migraine','BPPV'
+  ]},
 };
 
 /* ============ Game State ============ */
@@ -493,7 +639,9 @@ const BEST_KEY='dokdok_best_tier1';
 let score=0, best=getStore(BEST_KEY,0)||0;
 let tier=1, tierCount=0;
 let currentCase=null, tries=0;
-let usedDiseases=new Set();
+
+/* Deck control */
+let deckKeys=[], deckIdx=0;
 
 /* ============ UI update ============ */
 function updateTierLabel(){
@@ -502,14 +650,14 @@ function updateTierLabel(){
   $('#tierProgress').textContent = tierCount;
 }
 function updateVitalsBars(v){
-  $('#hr').textContent = v.HR || '—';
-  $('#rr').textContent = v.RR || '—';
-  $('#spo').textContent = v.SpO || '—';
+  $('#hr').textContent = v.HR ?? '—';
+  $('#rr').textContent = v.RR ?? '—';
+  $('#spo').textContent = v.SpO ?? '—';
   $('#bp').textContent = (v.BP && v.BP[0])? (v.BP[0]+'/'+v.BP[1]) : '—';
-  const hrPct = clamp((v.HR-50)/100,0,1)*100;
-  const rrPct = clamp((v.RR-10)/30,0,1)*100;
-  const spPct = clamp((v.SpO-75)/25,0,1)*100;
-  const bpPct = clamp(((v.BP?.[0]||0)-70)/70,0,1)*100;
+  const hrPct = clamp(((v.HR??0)-50)/100,0,1)*100;
+  const rrPct = clamp(((v.RR??0)-10)/30,0,1)*100;
+  const spPct = clamp(((v.SpO??0)-75)/25,0,1)*100;
+  const bpPct = clamp((((v.BP?.[0]??0)-70)/70),0,1)*100;
   $('#hrB').style.width=hrPct+'%';
   $('#rrB').style.width=rrPct+'%';
   $('#spoB').style.width=spPct+'%';
@@ -525,13 +673,20 @@ function resetUI(){
   updateTierLabel();
 }
 
-/* ============ Case Generation ============ */
-function genCaseByTier(){
-  const pool = TIER_DEF[tier].pool;
-  // Hindari pengulangan penyakit hingga semua dipakai
-  let candidates = pool.filter(k=>!usedDiseases.has(k));
-  if (candidates.length===0){ usedDiseases.clear(); candidates = pool.slice(); }
-  const key = pick(candidates); usedDiseases.add(key);
+/* ============ Deck Build & Case Flow ============ */
+function buildDeck(){
+  const pool = TIER_DEF[tier].pool.slice();
+  if (pool.length < TIER_DEF[tier].max){
+    // safety: jika pool kurang, tambahkan dari semua kunci GEN lain
+    const extras = Object.keys(GEN).filter(k=>!pool.includes(k));
+    pool.push(...shuffle(extras).slice(0, TIER_DEF[tier].max - pool.length));
+  }
+  deckKeys = shuffle(pool).slice(0, TIER_DEF[tier].max);
+  deckIdx = 0;
+  tierCount = 0;
+  updateTierLabel();
+}
+function genCaseFromKey(key){
   const maker = GEN[key];
   const c = maker();
   const age=rnd(17,78), sex=pick(['Laki-laki','Perempuan']);
@@ -540,22 +695,24 @@ function genCaseByTier(){
 }
 function newCase(){
   ensureAudio(); clickFx();
-  if (tierCount>=TIER_DEF[tier].max){
-    $('#nayaTalk').textContent = '“Tier selesai! Ganti tier atau ulang.”';
+  if (deckIdx >= deckKeys.length){
+    $('#nayaTalk').textContent = '“Tier selesai! Pilih tier lain atau ubah tier untuk ulang deck.”';
     return;
   }
-  currentCase = genCaseByTier();
-  // opsi (1 benar + 3 salah)
+  const key = deckKeys[deckIdx++];
+  currentCase = genCaseFromKey(key);
+
+  // opsi (1 benar + 3 salah) TANPA label bocoran
   const allNames = Object.values(GEN).map(fn=>fn().name);
   const wrongs = shuffle(allNames.filter(x=>x!==currentCase.name)).slice(0,3);
   const opts = shuffle([currentCase.name, ...wrongs]);
+
   // render
   $('#ident').textContent = currentCase.patient + ' • ' + currentCase.tag;
   $('#chief').textContent = currentCase.chief;
   $('#story').textContent = currentCase.story;
   $('#exam').textContent = currentCase.exam;
   updateVitalsBars(currentCase.v);
-  // HAPUS label "(paling mungkin)" biar ga ketebak
   $('#options').innerHTML = opts.map(o=>`
     <button class="btn" data-name="${o}">
       <span class="name">${o}</span>
@@ -610,9 +767,9 @@ $('#nextBtn').addEventListener('click', ()=> newCase());
 $('#tierSel').addEventListener('change', ()=>{
   ensureAudio(); clickFx();
   tier = +$('#tierSel').value;
-  tierCount = 0; usedDiseases.clear();
   $('#tierMax').textContent = TIER_DEF[tier].max;
-  updateTierLabel(); resetUI();
+  score = 0; $('#score').textContent = score;
+  buildDeck(); resetUI();
 });
 
 /* ============ Profile Modal ============ */
@@ -626,7 +783,6 @@ $('#saveProfile').addEventListener('click', ()=>{
   setStore('dok_name', name);
   $('#docNameLabel').textContent = 'Dr. ' + name;
 });
-/* avatar init */
 function initProfile(){
   const name = getStore('dok_name',''); $('#docNameLabel').textContent = 'Dr. ' + (name||'—');
   if (!getStore('dok_avatar', null)) setStore('dok_avatar','mika');
@@ -637,6 +793,7 @@ function initProfile(){
 function init(){
   $('#best').textContent = best;
   $('#tierMax').textContent = TIER_DEF[tier].max;
+  buildDeck();
   updateTierLabel();
   resetUI();
   initProfile();
